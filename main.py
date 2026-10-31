@@ -1,3 +1,4 @@
+from market_data import get_price
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -202,7 +203,29 @@ def main() -> None:
     app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.COMMAND, unknown_command))
+async def price_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    symbol = "BTC"
 
+    if context.args:
+        symbol = context.args[0].upper()
+
+    try:
+        data = await get_price(symbol)
+
+        await update.message.reply_text(
+            f"𝑮𝑶𝑫 𝑪𝑹𝒀𝑷𝑻𝑶 𝑫𝑬𝑺𝑲\n\n"
+            f"Coin: {data['symbol']}\n"
+            f"Pair: {data['pair']}\n"
+            f"Live Price: ${data['price']:,.4f}\n\n"
+            f"Source: Binance"
+        )
+
+    except Exception as error:
+        logger.exception("Price request failed")
+        await update.message.reply_text(
+            "Unable to fetch the price right now. Please try again."
+        )
+        
     logger.info("Starting 上帝...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
